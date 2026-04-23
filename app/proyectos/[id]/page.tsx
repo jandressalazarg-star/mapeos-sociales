@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Users, Map, Landmark, Star, ArrowLeft, ChevronRight } from "lucide-react";
+import { Users, Map, Landmark, Star, ArrowLeft, ChevronRight, Loader2, MapPin } from "lucide-react";
 
 /* ─── Types ───────────────────────────────────────────────── */
 interface Proyecto {
@@ -13,6 +13,7 @@ interface Proyecto {
   clasificacion: string;
   sector: string;
   malla: string;
+  extension?: string;
 }
 
 interface ModuleCard {
@@ -22,47 +23,41 @@ interface ModuleCard {
   route: string;
   icon: React.ReactNode;
   color: string;
-  glow: string;
 }
 
-/* ─── Module definitions ──────────────────────────────────── */
 function getModules(id: string): ModuleCard[] {
   return [
     {
       key: "organizaciones",
-      label: "Organizaciones Sociales",
-      description: "Juntas vecinales, asociaciones y grupos comunitarios del área.",
+      label: "Organizaciones",
+      description: "Juntas vecinales y grupos comunitarios.",
       route: `/proyectos/${id}/organizaciones`,
-      color: "rgba(59,130,246,.22)",
-      glow: "#3b82f6",
-      icon: <Users size={20} />,
+      color: "#0aa0e1",
+      icon: <Users size={22} />,
     },
     {
       key: "vias",
-      label: "Vías del Proyecto",
-      description: "Calles, avenidas y pasajes comprendidos en el área.",
+      label: "Vías y Calles",
+      description: "Mapeo de avenidas y pasajes del área.",
       route: `/proyectos/${id}/vias`,
-      color: "rgba(52,211,153,.18)",
-      glow: "#34d399",
-      icon: <Map size={20} />,
+      color: "#5a5a5a",
+      icon: <Map size={22} />,
     },
     {
       key: "instituciones",
-      label: "Instituciones de Impacto",
-      description: "Colegios, hospitales, municipios y entidades públicas.",
+      label: "Instituciones",
+      description: "Entidades públicas y puntos de impacto.",
       route: `/proyectos/${id}/instituciones`,
-      color: "rgba(167,139,250,.2)",
-      glow: "#a78bfa",
-      icon: <Landmark size={20} />,
+      color: "#283c91",
+      icon: <Landmark size={22} />,
     },
     {
       key: "elementos",
-      label: "Elementos Valorados",
-      description: "Patrimonio cultural, áreas verdes y valor social a preservar.",
+      label: "Valor Social",
+      description: "Patrimonio y áreas verdes a preservar.",
       route: `/proyectos/${id}/elementos`,
-      color: "rgba(251,191,36,.18)",
-      glow: "#fbbf24",
-      icon: <Star size={20} />,
+      color: "#e11e2d",
+      icon: <Star size={22} />,
     },
   ];
 }
@@ -90,108 +85,167 @@ export default function HubProyecto() {
   }, [id]);
 
   const modules = getModules(id);
-  const isMalla = proyecto?.clasificacion === "Malla";
+  
+  // 🎨 Lógica de Identificación Visual
+  const isExt = proyecto?.clasificacion?.toUpperCase() === "EXTENSIÓN" || proyecto?.clasificacion?.toUpperCase() === "EXTENSION";
+  
+  // El badge y los bordes siguen siendo dinámicos para identificar el tipo
+  const typeAccentColor = isExt ? "#0aa0e1" : "#283c91";
+  
+  // El texto de las cápsulas es SIEMPRE el azul oscuro institucional
+  const textPrimaryColor = "#283c91";
+
+  if (loading) return (
+    <div style={{ background: '#f4f7fa', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Loader2 className="animate-spin text-[#283c91]" size={40} />
+    </div>
+  );
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+
+        :root {
+          --alfaco-azul: #283c91;
+          --alfaco-plomo: #5a5a5a;
+          --alfaco-celeste: #0aa0e1;
+          --bg-main: #f4f7fa;
+        }
 
         .page {
-          min-height: 100vh; background: #001e3c; color: #fff;
-          font-family: 'DM Sans', sans-serif; position: relative;
+          min-height: 100vh; background: var(--bg-main); color: var(--alfaco-plomo);
+          font-family: 'DM Sans', sans-serif;
         }
 
         .header {
           position: sticky; top: 0; z-index: 50;
-          background: rgba(0,30,60,.8); backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(255,255,255,.06);
-          padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+          background: white; border-bottom: 1px solid #e2e8f0;
+          padding: 12px 18px; display: flex; align-items: center; gap: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
 
         .btn-back {
-          width: 36px; height: 36px; border-radius: 10px;
-          background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09);
-          display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;
+          width: 40px; height: 40px; border-radius: 12px;
+          background: #f8fafc; border: 1px solid #e2e8f0;
+          display: flex; align-items: center; justify-content: center; 
+          color: var(--alfaco-azul); cursor: pointer;
         }
 
-        .header-chip {
-          display: inline-flex; padding: 2px 8px; border-radius: 20px;
-          font-size: 10px; font-weight: 700; font-family: 'Sora'; margin-top: 4px;
-        }
-        .chip-malla { background: rgba(37,99,235,.2); color: #93c5fd; border: 1px solid rgba(59,130,246,.2); }
-        .chip-ext { background: rgba(251,191,36,.12); color: #fcd34d; border: 1px solid rgba(251,191,36,.2); }
-
-        .content { max-width: 540px; margin: 0 auto; padding: 24px 16px; }
+        .project-info h1 { font-family: 'Sora'; font-size: 17px; font-weight: 800; color: var(--alfaco-azul); margin: 0; }
         
-        .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .badge-main { 
+          display: inline-block; padding: 4px 10px; border-radius: 8px;
+          font-size: 10px; font-weight: 800; font-family: 'Sora'; text-transform: uppercase;
+          color: white; margin-top: 2px;
+        }
+
+        .hero-card {
+          background: white; margin: 20px; padding: 24px; border-radius: 28px;
+          border: 1px solid rgba(226, 232, 240, 0.8);
+          box-shadow: 0 10px 25px rgba(40,60,145,0.05);
+        }
+
+        .hero-details { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+          gap: 15px; 
+          margin-top: 15px; 
+        }
+
+        .detail-item { 
+          background: #f8fafc; 
+          padding: 12px 16px; 
+          border-radius: 16px; 
+          border: 1px solid #f1f5f9;
+          border-left: 4px solid transparent; 
+        }
+
+        .detail-label { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: 0.6; }
+        .detail-value { font-size: 13px; font-weight: 700; display: block; margin-top: 2px; }
+
+        .content { padding: 0 20px 40px; }
+        .section-title { font-family: 'Sora'; font-size: 20px; font-weight: 800; color: var(--alfaco-azul); margin-bottom: 20px; }
+
+        .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
         .module-card {
-          position: relative; overflow: hidden;
-          background: rgba(255,255,255,.04); backdrop-filter: blur(24px);
-          border: 1px solid rgba(255,255,255,.08); border-radius: 24px;
-          padding: 24px 18px; display: flex; flex-direction: column;
-          cursor: pointer; transition: all 0.2s ease;
-          animation: cardIn 0.5s ease-out both;
+          background: white; border-radius: 26px;
+          border: 1px solid #e2e8f0; padding: 22px 18px;
+          display: flex; flex-direction: column;
+          cursor: pointer; transition: 0.2s;
         }
-        .module-card:hover {
-          transform: translateY(-4px); border-color: rgba(255,255,255,0.15);
-          box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-        }
-
-        .card-glow {
-          position: absolute; width: 120px; height: 120px;
-          border-radius: 50%; top: -30px; right: -30px;
-          opacity: 0.15; filter: blur(25px); pointer-events: none;
-        }
+        .module-card:hover { transform: translateY(-5px); border-color: var(--alfaco-celeste); }
 
         .card-icon-wrap {
-          width: 44px; height: 44px; border-radius: 14px;
+          width: 48px; height: 48px; border-radius: 16px;
           display: flex; align-items: center; justify-content: center;
-          margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.1);
+          margin-bottom: 16px; color: white;
         }
 
-        .card-label { font-family: 'Sora'; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-        .card-desc { font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.5; }
+        .card-label { font-family: 'Sora'; font-size: 15px; font-weight: 700; color: var(--alfaco-azul); margin-bottom: 6px; }
+        .card-desc { font-size: 11px; color: var(--alfaco-plomo); line-height: 1.4; opacity: 0.8; }
 
-        @keyframes cardIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+        .chevron-indicator { margin-top: auto; padding-top: 15px; display: flex; justify-content: flex-end; color: var(--alfaco-celeste); opacity: 0.5; }
       `}</style>
 
       <div className="page">
-        <div className="header">
+        <header className="header">
           <button className="btn-back" onClick={() => router.push("/dashboard")}>
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 style={{ fontFamily: 'Sora', fontSize: '16px', fontWeight: 800 }}>{proyecto?.codigo || "—"}</h1>
-            <span className={isMalla ? "header-chip chip-malla" : "header-chip chip-ext"}>
+          <div className="project-info">
+            <h1>{proyecto?.codigo || "PROYECTO"}</h1>
+            <span className="badge-main" style={{ background: typeAccentColor }}>
               {proyecto?.clasificacion}
             </span>
+          </div>
+        </header>
+
+        <div className="hero-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--alfaco-azul)', marginBottom: '15px' }}>
+            <MapPin size={20} />
+            <span style={{ fontFamily: 'Sora', fontWeight: 700, fontSize: '18px' }}>{proyecto?.distrito}</span>
+          </div>
+          
+          <div className="hero-details">
+            {/* 🎯 SECTOR: Texto Azul, Borde Dinámico */}
+            <div className="detail-item" style={{ borderLeftColor: typeAccentColor }}>
+              <span className="detail-label" style={{ color: textPrimaryColor }}>Sector</span>
+              <span className="detail-value" style={{ color: textPrimaryColor }}>{proyecto?.sector || "—"}</span>
+            </div>
+
+            {/* 🎯 MALLA: Texto Azul, Borde Dinámico */}
+            <div className="detail-item" style={{ borderLeftColor: typeAccentColor }}>
+              <span className="detail-label" style={{ color: textPrimaryColor }}>Malla</span>
+              <span className="detail-value" style={{ color: textPrimaryColor }}>{proyecto?.malla || "—"}</span>
+            </div>
+
+            {/* 🎯 EXTENSIÓN: Texto Azul, Borde Dinámico (solo si aplica) */}
+            {isExt && proyecto?.extension && (
+              <div className="detail-item" style={{ borderLeftColor: typeAccentColor }}>
+                <span className="detail-label" style={{ color: textPrimaryColor }}>Extensión</span>
+                <span className="detail-value" style={{ color: textPrimaryColor }}>
+                  {proyecto?.extension}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="content">
-          <div style={{ marginBottom: 24 }}>
-            <h2 style={{ fontFamily: 'Sora', fontSize: '20px', fontWeight: 800 }}>Mapeo Social</h2>
-            <p style={{ fontSize: '13px', color: '#93c5fd', opacity: 0.6 }}>Gestiona la información de campo</p>
-          </div>
-
+          <h2 className="section-title">Gestión de Campo</h2>
+          
           <div className="module-grid">
-            {modules.map((mod, i) => (
-              <div 
-                key={mod.key} 
-                className="module-card" 
-                style={{ animationDelay: `${i * 0.1}s` }}
-                onClick={() => router.push(mod.route)}
-              >
-                <div className="card-glow" style={{ background: mod.glow }} />
-                <div className="card-icon-wrap" style={{ background: mod.color, color: mod.glow }}>
+            {modules.map((mod) => (
+              <div key={mod.key} className="module-card" onClick={() => router.push(mod.route)}>
+                <div className="card-icon-wrap" style={{ background: mod.color }}>
                   {mod.icon}
                 </div>
                 <div className="card-label">{mod.label}</div>
                 <div className="card-desc">{mod.description}</div>
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', opacity: 0.2 }}>
-                  <ChevronRight size={16} />
+                <div className="chevron-indicator">
+                  <ChevronRight size={18} />
                 </div>
               </div>
             ))}
