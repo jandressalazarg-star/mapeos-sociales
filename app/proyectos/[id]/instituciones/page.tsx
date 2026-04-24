@@ -196,7 +196,7 @@ export default function GestionInstituciones() {
         }
         .btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(40,60,145,0.3); }
 
-        /* ✨ Bloque de contacto con overflow visible ✨ */
+        /* Bloque de contacto con overflow visible */
         .contact-block { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 25px; position: relative; overflow: visible; }
         .btn-add { background: white; border: 1.5px dashed var(--alfaco-celeste); color: var(--alfaco-celeste); padding: 12px; border-radius: 14px; width: 100%; cursor: pointer; font-family: 'Sora'; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 25px; }
         
@@ -231,7 +231,8 @@ export default function GestionInstituciones() {
               {loading ? (
                 <div style={{textAlign:'center', padding:'40px'}}><Loader2 className="animate-spin" color="var(--alfaco-azul)" /></div>
               ) : elementosFiltrados.length === 0 ? (
-                <div style={{textAlign:'center', padding:'40px', opacity:0.5, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center'}}>
+                /* ✨ CORRECCIÓN DE LA LÍNEA 239: justifyContent en camelCase ✨ */
+                <div style={{textAlign:'center', padding:'40px', opacity:0.5, display:'flex', flexDirection:'column', alignItems:'center', justifyContent: 'center'}}>
                   <Building2 size={40} style={{marginBottom:10}} />
                   <p>No hay instituciones registradas.</p>
                 </div>
@@ -246,7 +247,7 @@ export default function GestionInstituciones() {
                         <h3 style={{fontFamily:'Sora', fontSize:15, color:'var(--alfaco-azul)', margin:0}}>{inst.nombre}</h3>
                         <p style={{fontSize:12, opacity:0.6}}>{inst.tipo_institucion} • Impacto {inst.impacto || "--"}</p>
                       </div>
-                      <div style={{display:'flex', gap:8}}>
+                      <div style={{display:'flex', gap:8, alignSelf: 'center'}}>
                         <button onClick={(e) => { e.stopPropagation(); abrirFormulario(inst, true); }} style={{background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:10, padding:8, color:'var(--alfaco-azul)'}}><Copy size={18}/></button>
                         <button onClick={(e) => { e.stopPropagation(); if(confirm("¿Eliminar?")) supabase.from("instituciones").delete().eq("id", inst.id).then(cargarDatos); }} style={{background:'#fef2f2', border:'1px solid #fee2e2', borderRadius:10, padding:8, color:'#ef4444'}}><Trash2 size={18}/></button>
                       </div>
@@ -294,14 +295,14 @@ export default function GestionInstituciones() {
                         <label>Dirección</label>
                         <div className="input-ico-wrap" style={{marginBottom:0}}><MapPin size={18}/><input value={c.direccion} onChange={e => updateContacto(i, "direccion", e.target.value)} placeholder="Dirección" /></div>
 
-                        {/* ✨ BOTÓN ELIMINAR CORREGIDO: A LA DERECHA Y SIN RESPLANDOR ✨ */}
+                        {/* ✨ BOTÓN ELIMINAR CONTACTO: A LA DERECHA, SIN BRILLO Y ENCIMA DE TODO ✨ */}
                         {contactos.length > 1 && (
                           <button 
                             type="button" 
                             onClick={() => eliminarContacto(i)} 
                             style={{
                               position:'absolute', 
-                              right: '-12px', /* Movido a la derecha */
+                              right: '-12px', 
                               top: '-12px',
                               color:'#ef4444', 
                               background:'#fef2f2', 
@@ -312,7 +313,6 @@ export default function GestionInstituciones() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              /* Se eliminó boxShadow para quitar el resplandor */
                               zIndex: 9999,
                               cursor: 'pointer'
                             }}
@@ -333,8 +333,8 @@ export default function GestionInstituciones() {
               </div>
 
               <button type="submit" disabled={saving} className="btn-main">
-                {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                {saving ? "GUARDANDO..." : "GUARDAR INSTITUCIÓN"}
+                {saving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                {saving ? "GUARDANDO..." : "GUARDAR"}
               </button>
             </form>
           )}
