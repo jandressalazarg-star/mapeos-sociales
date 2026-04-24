@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Trash2, Plus, Star, ArrowLeft, ChevronRight, Copy, Save, Search, X } from "lucide-react";
+import { 
+  Trash2, Plus, Star, ArrowLeft, Save, Copy, X, Search, 
+  Loader2, MapPin, Info, Edit3, Sparkles 
+} from "lucide-react";
 
 export default function GestionElementos() {
   const params = useParams();
@@ -34,9 +37,9 @@ export default function GestionElementos() {
 
   useEffect(() => { if (proyectoId) cargarDatos(); }, [proyectoId]);
 
-  // Función para recortar a 10 palabras
+  // Función para recortar a 10 palabras (se mantiene lógica útil)
   const recortarTexto = (texto: string) => {
-    if (!texto) return "Sin descripción";
+    if (!texto) return "Sin descripción de ubicación";
     const palabras = texto.split(/\s+/);
     if (palabras.length <= 10) return texto;
     return palabras.slice(0, 10).join(" ") + "...";
@@ -78,76 +81,87 @@ export default function GestionElementos() {
   return (
     <>
       <style>{`
-        .page { min-height: 100vh; background: #001e3c; color: #fff; font-family: 'DM Sans', sans-serif; padding-bottom: 40px; }
-        .header { position: sticky; top: 0; z-index: 20; background: rgba(0,30,60,0.8); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; align-items: center; gap: 15px; }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+        :root { --alfaco-azul: #283c91; --alfaco-plomo: #5a5a5a; --alfaco-celeste: #0aa0e1; --alfaco-oro: #d97706; --bg-main: #f4f7fa; }
+        
+        body { background: var(--bg-main); font-family: 'DM Sans', sans-serif; color: var(--alfaco-plomo); margin: 0; }
+        .page { min-height: 100vh; padding-bottom: 40px; }
+
+        .header { position: sticky; top: 0; z-index: 50; background: white; border-bottom: 1px solid #e2e8f0; padding: 12px 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .btn-icon-back { width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--alfaco-azul); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
         .content { max-width: 600px; margin: 0 auto; padding: 20px; }
-        
-        /* Buscador con acento Amarillo */
+
         .search-container { position: relative; margin-bottom: 20px; }
-        .search-container input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 12px 12px 12px 42px; color: #fff; outline: none; transition: 0.2s; color-scheme: dark; }
-        .search-container input:focus { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; }
-        .search-container svg { position: absolute; left: 14px; top: 13px; color: #fbbf24; opacity: 0.8; }
+        .search-container input { width: 100%; height: 48px; background: white; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 0 15px 0 45px; outline: none; font-size: 14px; transition: 0.2s; }
+        .search-container input:focus { border-color: var(--alfaco-celeste); box-shadow: 0 0 0 4px rgba(10,160,225,0.1); }
+        .search-container svg { position: absolute; left: 16px; top: 14px; color: var(--alfaco-azul); opacity: 0.5; }
 
-        .form-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 20px; margin-bottom: 16px; }
-        label { display: block; font-size: 11px; color: #fbbf24; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, textarea { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; color: #fff; font-size: 14px; outline: none; color-scheme: dark; }
+        .list-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; border: 1px solid rgba(226, 232, 240, 0.8); cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; align-items: flex-start; gap: 15px; }
+        .list-card:hover { transform: translateY(-2px); border-color: var(--alfaco-celeste); box-shadow: 0 8px 20px rgba(40,60,145,0.06); }
         
-        /* Botón Principal Amarillo */
-        .btn-main { width: 100%; padding: 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, #b45309, #fbbf24); color: #fff; font-family: 'Sora'; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(251,191,36,0.2); transition: 0.2s; }
-        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(251,191,36,0.3); }
+        .icon-box { width: 44px; height: 44px; border-radius: 12px; background: #fffbeb; color: #fbbf24; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .list-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; align-items: flex-start; justify-content: space-between; cursor: pointer; transition: 0.2s; }
-        .list-card:hover { background: rgba(255,255,255,0.08); border-color: rgba(251,191,36,0.3); }
+        .form-section { background: white; border-radius: 24px; padding: 22px; border: 1px solid #e2e8f0; margin-bottom: 16px; }
+        .section-tag { font-size: 10px; font-weight: 800; color: var(--alfaco-celeste); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: block; }
         
-        .info { flex: 1; padding-right: 10px; }
-        .info h3 { font-family: 'Sora'; font-size: 15px; font-weight: 700; margin-bottom: 4px; color: #fff; }
-        .info p { font-size: 12px; color: #fbbf24; opacity: 0.7; line-height: 1.4; }
+        label { display: block; font-size: 11px; color: var(--alfaco-azul); font-weight: 700; margin-bottom: 8px; text-transform: uppercase; opacity: 0.7; }
+        input, textarea { width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 15px; color: var(--alfaco-plomo); font-size: 14px; outline: none; transition: 0.2s; }
+        input:focus, textarea:focus { border-color: var(--alfaco-celeste); background: white; }
 
-        .actions { display: flex; gap: 10px; flex-shrink: 0; padding-top: 5px; }
+        .btn-main { 
+          width: 100%; height: 58px; margin-top: 20px;
+          background: linear-gradient(135deg, var(--alfaco-azul) 0%, var(--alfaco-celeste) 100%);
+          color: white; border: none; border-radius: 20px; font-family: 'Sora'; font-weight: 700; font-size: 15px;
+          text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+          box-shadow: 0 10px 25px rgba(40,60,145,0.2); transition: 0.3s ease;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(40,60,145,0.3); }
       `}</style>
 
       <div className="page">
-        <div className="header">
-          <button onClick={() => view === "list" ? router.push(`/proyectos/${proyectoId}`) : setView("list")} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+        <header className="header">
+          <button className="btn-icon-back" onClick={() => view === "list" ? router.push(`/proyectos/${proyectoId}`) : setView("list")}>
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 style={{ fontFamily: 'Sora', fontSize: '18px', fontWeight: 800 }}>Elementos Valorados</h1>
-            <p style={{ fontSize: '11px', color: '#fbbf24' }}>Patrimonio y Puntos de Interés</p>
+            <h1 style={{ fontFamily: 'Sora', fontSize: '17px', fontWeight: 800, color: 'var(--alfaco-azul)', margin: 0 }}>Elementos Valorados</h1>
+            <p style={{ fontSize: '11px', color: 'var(--alfaco-celeste)', fontWeight: 700 }}>PUNTOS DE INTERÉS Y PATRIMONIO</p>
           </div>
-        </div>
+        </header>
 
         <div className="content">
           {view === "list" ? (
             <>
               <div className="search-container">
-                <Search size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por nombre o ubicación..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                <Search size={20} />
+                <input type="text" placeholder="Buscar por nombre o descripción..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
 
               <button className="btn-main" style={{ marginBottom: 25 }} onClick={() => abrirFormulario()}>
-                <Plus size={18} style={{ marginRight: 8, strokeWidth: 3 }} /> REGISTRAR NUEVO ELEMENTO
+                <Plus size={20} /> REGISTRAR NUEVO ELEMENTO
               </button>
 
               {loading ? (
-                <p style={{ textAlign: 'center', opacity: 0.5 }}>Cargando elementos...</p>
+                <div style={{textAlign:'center', padding:'40px'}}><Loader2 className="animate-spin" color="var(--alfaco-azul)" /></div>
               ) : elementosFiltrados.length === 0 ? (
-                <p style={{ textAlign: 'center', opacity: 0.3, padding: 20 }}>No se encontraron elementos.</p>
+                <div style={{textAlign:'center', padding:'40px', opacity:0.5}}>
+                  <Sparkles size={40} style={{margin:'0 auto 10px'}} />
+                  <p>No hay elementos registrados aún.</p>
+                </div>
               ) : (
                 elementosFiltrados.map(el => (
                   <div key={el.id} className="list-card" onClick={() => abrirFormulario(el)}>
-                    <div className="info">
-                      <h3>{el.nombre}</h3>
-                      <p>{recortarTexto(el.comentarios_ubicacion)}</p>
+                    <div className="icon-box">
+                      <Star size={22} fill="#fbbf24" stroke="#fbbf24" />
                     </div>
-                    <div className="actions">
-                      <button onClick={(e) => { e.stopPropagation(); abrirFormulario(el, true); }} style={{ background: 'none', border: 'none', color: '#93c5fd' }} title="Duplicar"><Copy size={18} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); if(confirm("¿Eliminar?")) supabase.from("elementos_valorados").delete().eq("id", el.id).then(cargarDatos); }} style={{ background: 'none', border: 'none', color: '#f87171' }}><Trash2 size={18} /></button>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{fontFamily:'Sora', fontSize:15, color:'var(--alfaco-azul)', margin:0}}>{el.nombre}</h3>
+                      <p style={{fontSize:12, opacity:0.6, marginTop:4}}>{recortarTexto(el.comentarios_ubicacion)}</p>
+                    </div>
+                    <div style={{display:'flex', gap:8}}>
+                      <button onClick={(e) => { e.stopPropagation(); abrirFormulario(el, true); }} style={{background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:10, padding:8, color:'var(--alfaco-azul)'}}><Copy size={18}/></button>
+                      <button onClick={(e) => { e.stopPropagation(); if(confirm("¿Eliminar este elemento?")) supabase.from("elementos_valorados").delete().eq("id", el.id).then(cargarDatos); }} style={{background:'#fef2f2', border:'1px solid #fee2e2', borderRadius:10, padding:8, color:'#ef4444'}}><Trash2 size={18}/></button>
                     </div>
                   </div>
                 ))
@@ -155,29 +169,32 @@ export default function GestionElementos() {
             </>
           ) : (
             <form onSubmit={handleSave}>
-              <div className="form-card">
-                <label>Nombre del elemento valorado</label>
-                <input 
-                  required 
-                  value={nombre} 
-                  onChange={e => setNombre(e.target.value)} 
-                  placeholder="Ej. Gruta de la Virgen..." 
-                />
-              </div>
-
-              <div className="form-card">
-                <label>Comentarios / Ubicación</label>
-                <textarea 
-                  required
-                  value={comentarios} 
-                  onChange={e => setComentarios(e.target.value)} 
-                  rows={6} 
-                  placeholder="Escribe la ubicación detallada..." 
-                />
+              <div className="form-section">
+                <span className="section-tag">Detalles del Elemento</span>
+                <div style={{marginBottom:16}}>
+                  <label>Nombre del elemento valorado</label>
+                  <input 
+                    required 
+                    value={nombre} 
+                    onChange={e => setNombre(e.target.value)} 
+                    placeholder="Ej. Monumento Histórico, Gruta, etc." 
+                  />
+                </div>
+                <div>
+                  <label>Comentarios / Ubicación Específica</label>
+                  <textarea 
+                    required
+                    value={comentarios} 
+                    onChange={e => setComentarios(e.target.value)} 
+                    rows={6} 
+                    placeholder="Describe la ubicación exacta" 
+                  />
+                </div>
               </div>
 
               <button type="submit" disabled={saving} className="btn-main">
-                {saving ? "GUARDANDO..." : "GUARDAR ELEMENTO"}
+                {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                {saving ? "GUARDANDO..." : "GUARDAR"}
               </button>
             </form>
           )}

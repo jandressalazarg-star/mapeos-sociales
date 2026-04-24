@@ -29,7 +29,7 @@ function getModules(id: string): ModuleCard[] {
   return [
     {
       key: "organizaciones",
-      label: "Organizaciones",
+      label: "Organizaciones Sociales",
       description: "Juntas vecinales y grupos comunitarios.",
       route: `/proyectos/${id}/organizaciones`,
       color: "#0aa0e1",
@@ -45,16 +45,16 @@ function getModules(id: string): ModuleCard[] {
     },
     {
       key: "instituciones",
-      label: "Instituciones",
-      description: "Entidades públicas y puntos de impacto.",
+      label: "Instituciones de Impacto",
+      description: "Entidades y empresas de impacto.",
       route: `/proyectos/${id}/instituciones`,
       color: "#283c91",
       icon: <Landmark size={22} />,
     },
     {
       key: "elementos",
-      label: "Valor Social",
-      description: "Patrimonio y áreas verdes a preservar.",
+      label: "Elementos Valorados",
+      description: "Patrimonio y áreas a preservar.",
       route: `/proyectos/${id}/elementos`,
       color: "#e11e2d",
       icon: <Star size={22} />,
